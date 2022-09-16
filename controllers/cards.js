@@ -5,13 +5,13 @@ const DEFAULT_ERROR_CODE = 500;
 const NOTFOUND_ERROR_CODE = 404;
 
 function processError(err, res) {
-  if (err.name === 'ValidationError') {
+  if (err.name === 'ValidationError' || err.name === 'CastError') {
     return res.status(VALIDATION_ERROR_CODE).send({ message: 'Ошибка валидации данных' });
   }
-  if (err.name === 'CastError') {
-    return res.status(NOTFOUND_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
+  if (err.name === 'CardNotFound') {
+    return res.status(VALIDATION_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
   }
-  return res.status(DEFAULT_ERROR_CODE).send({ data: err, message: 'На сервере произошла ошибка' });
+  return res.status(DEFAULT_ERROR_CODE).send({ message: 'На сервере произошла ошибка' });
 }
 
 module.exports.getCard = (req, res) => {
@@ -47,6 +47,11 @@ module.exports.likeCard = (req, res) => Card.findByIdAndUpdate(
   { $addToSet: { likes: req.user._id } },
   { new: true },
 )
+  .orFail(() => {
+    const error = new Error();
+    error.name = 'CardNotFound';
+    throw error;
+  })
   .then((card) => {
     res.send(card);
   })
@@ -57,6 +62,11 @@ module.exports.dislikeCard = (req, res) => Card.findByIdAndUpdate(
   { $pull: { likes: req.user._id } },
   { new: true },
 )
+  .orFail(() => {
+    const error = new Error();
+    error.name = 'CardNotFound';
+    throw error;
+  })
   .then((card) => {
     res.send(card);
   })

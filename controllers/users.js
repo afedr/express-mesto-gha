@@ -5,10 +5,10 @@ const DEFAULT_ERROR_CODE = 500;
 const NOTFOUND_ERROR_CODE = 404;
 
 function processError(err, res) {
-  if (err.name === 'ValidationError') {
-    return res.status(VALIDATION_ERROR_CODE).send({ message: 'Ошибка валидации данных: ' });
+  if (err.name === 'ValidationError' || err.name === 'CastError') {
+    return res.status(VALIDATION_ERROR_CODE).send({ message: 'Ошибка валидации данных' });
   }
-  return res.status(DEFAULT_ERROR_CODE).send({ data: err, message: 'На сервере произошла ошибка' });
+  return res.status(DEFAULT_ERROR_CODE).send({ message: 'На сервере произошла ошибка' });
 }
 
 module.exports.getUsers = (req, res) => {
