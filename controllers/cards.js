@@ -9,7 +9,7 @@ function processError(err, res) {
     return res.status(VALIDATION_ERROR_CODE).send({ message: 'Ошибка валидации данных' });
   }
   if (err.name === 'CardNotFound') {
-    return res.status(VALIDATION_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
+    return res.status(NOTFOUND_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
   }
   return res.status(DEFAULT_ERROR_CODE).send({ message: 'На сервере произошла ошибка' });
 }
