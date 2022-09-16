@@ -64,7 +64,7 @@ module.exports.dislikeCard = (req, res) => Card.findByIdAndUpdate(
 )
   .orFail(() => {
     const error = new Error();
-    error.name = 'ValidationError';
+    error.name = 'CardNotFound';
     throw error;
   })
   .then((card) => {
