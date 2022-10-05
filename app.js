@@ -1,6 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+// const { celebrate, Joi } = require('celebrate');
+const auth = require('./middlewares/auth');
+const { createUser, login } = require('./controllers/users');
 
 const { PORT = 3000 } = process.env;
 
@@ -15,19 +18,21 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   // useFindAndModify: false,
 });
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '632364f6c1c2bf582dbb05a8',
-  };
+app.post('/signin', login);
 
-  next();
-});
+app.post('/signup', createUser);
+
+app.use(auth);
 
 app.use('/', require('./routes/users'));
 app.use('/', require('./routes/cards'));
 
 app.use('*', (req, res) => {
   res.status(404).send({ message: 'Страница не найдена' });
+});
+
+app.use((err, req, res, next) => {
+  res.status(err.statusCode).send({ message: err.message });
 });
 
 app.listen(PORT, () => {

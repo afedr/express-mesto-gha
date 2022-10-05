@@ -30,11 +30,18 @@ module.exports.createCard = (req, res) => {
     .catch((err) => processError(err, res));
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
         return res.status(NOTFOUND_ERROR_CODE).send({ message: 'Запрашиваемая карточка не найдена' });
+      }
+      console.log(card.owner, req.user._id);
+      if (String(card.owner) !== String(req.user._id)) {
+        const err = new Error('Попытка удалить чужую карточку');
+        err.statusCode = 403;
+
+        return next(err);
       }
       return card.remove()
         .then(() => res.send({ message: 'Карточка успешно удалена' }));
