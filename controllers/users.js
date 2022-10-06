@@ -1,22 +1,10 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
 const bcrypt = require('bcryptjs');
+const User = require('../models/user');
 const ValidationError = require('../errors/ValidationError');
 const UnauthorizedError = require('../errors/UnauthorizedError');
 const NotFoundError = require('../errors/NotFoundError');
-const ConflictError = require('../errors/NotFoundError');
-
-const VALIDATION_ERROR_CODE = 400;
-const DEFAULT_ERROR_CODE = 500;
-const NOTFOUND_ERROR_CODE = 404;
-
-function processError(err, res) {
-  console.log(err);
-  if (err.name === 'ValidationError' || err.name === 'CastError') {
-    return res.status(VALIDATION_ERROR_CODE).send({ message: 'Ошибка валидации данных' });
-  }
-  return res.status(DEFAULT_ERROR_CODE).send({ message: 'На сервере произошла ошибка' });
-}
+const ConflictError = require('../errors/ConflictError');
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
@@ -28,7 +16,7 @@ module.exports.getUserId = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        return res.status(NOTFOUND_ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' });
+        return next(new NotFoundError('Запрашиваемый пользователь не найден'));
       }
       return res.send(user);
     })
@@ -45,7 +33,7 @@ module.exports.getMe = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
       if (!user) {
-        return res.status(NOTFOUND_ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' });
+        return next(new NotFoundError('Запрашиваемый пользователь не найден'));
       }
       return res.send(user);
     })
@@ -64,13 +52,9 @@ module.exports.createUser = (req, res, next) => {
   } = req.body;
 
   if (!email || !password) {
-    const err = new Error('Отсутствует email или пароль');
-    err.statusCode = 400;
-
-    return next(err);
+    return next(ValidationError('Отсутствует email или пароль'));
   }
 
-  // console.log(name, about, avatar, email, password)
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
       name, about, avatar, email, password: hash,
