@@ -52,9 +52,7 @@ module.exports.likeCard = (req, res, next) => Card.findByIdAndUpdate(
   { new: true },
 )
   .orFail(() => {
-    const error = new Error();
-    error.name = 'CardNotFound';
-    throw error;
+    next(new NotFoundError('Карточка не найдена'));
   })
   .then((card) => {
     res.send(card);
@@ -75,9 +73,7 @@ module.exports.dislikeCard = (req, res, next) => Card.findByIdAndUpdate(
   { new: true },
 )
   .orFail(() => {
-    const error = new Error();
-    error.name = 'CardNotFound';
-    throw error;
+    next(new NotFoundError('Карточка не найдена'));
   })
   .then((card) => {
     res.send(card);
