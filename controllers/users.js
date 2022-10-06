@@ -55,7 +55,7 @@ module.exports.createUser = (req, res, next) => {
     return next(ValidationError('Отсутствует email или пароль'));
   }
 
-  bcrypt.hash(password, 10)
+  return bcrypt.hash(password, 10)
     .then((hash) => User.create({
       name, about, avatar, email, password: hash,
     }))
