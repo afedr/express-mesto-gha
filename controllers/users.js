@@ -1,6 +1,10 @@
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const ValidationError = require('../errors/ValidationError');
+const UnauthorizedError = require('../errors/UnauthorizedError');
+const NotFoundError = require('../errors/NotFoundError');
+const ConflictError = require('../errors/NotFoundError');
 
 const VALIDATION_ERROR_CODE = 400;
 const DEFAULT_ERROR_CODE = 500;
@@ -14,13 +18,13 @@ function processError(err, res) {
   return res.status(DEFAULT_ERROR_CODE).send({ message: 'На сервере произошла ошибка' });
 }
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((user) => res.send(user))
-    .catch((err) => processError(err, res));
+    .catch(next);
 };
 
-module.exports.getUserId = (req, res) => {
+module.exports.getUserId = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
@@ -28,10 +32,16 @@ module.exports.getUserId = (req, res) => {
       }
       return res.send(user);
     })
-    .catch((err) => processError(err, res));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new ValidationError('Переданы некорректные данные'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-module.exports.getMe = (req, res) => {
+module.exports.getMe = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
       if (!user) {
@@ -39,13 +49,19 @@ module.exports.getMe = (req, res) => {
       }
       return res.send(user);
     })
-    .catch((err) => processError(err, res));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new ValidationError('Переданы некорректные данные'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.createUser = (req, res, next) => {
-  console.log(req.body)
   const {
-    name, about, avatar, email, password } = req.body;
+    name, about, avatar, email, password,
+  } = req.body;
 
   if (!email || !password) {
     const err = new Error('Отсутствует email или пароль');
@@ -60,31 +76,48 @@ module.exports.createUser = (req, res, next) => {
       name, about, avatar, email, password: hash,
     }))
     .then((user) => res.send(user))
-    .catch((err) => processError(err, res));
-  console.log("finished creating user")
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ValidationError('Переданы некорретные данные'));
+      } else if (err.code === 11000) {
+        next(new ConflictError('Пользователь с таким email уже существует'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-
-module.exports.updateProfile = (req, res) => {
+module.exports.updateProfile = (req, res, next) => {
   User.findByIdAndUpdate(req.user._id, req.body, {
     new: true,
     runValidators: true,
   })
     .then((user) => res.send(user))
-    .catch((err) => processError(err, res));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new NotFoundError('Переданы некорретные данные'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   User.findByIdAndUpdate(req.user._id, req.body, {
     new: true,
     runValidators: true,
   })
     .then((user) => res.send(user))
-    .catch((err) => processError(err, res));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new NotFoundError('Переданы некорретные данные'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
@@ -93,6 +126,7 @@ module.exports.login = (req, res) => {
       });
       return res.send({ token });
     })
-    .catch((err) => processError(err, res));
+    .catch(() => {
+      next(new UnauthorizedError('Неверный логин или пароль'));
+    });
 };
-
