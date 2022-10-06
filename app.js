@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const { celebrate, Joi } = require('celebrate');
 const auth = require('./middlewares/auth');
 const { createUser, login } = require('./controllers/users');
+const { errors } = require('celebrate');
 
 const regularExp = /https?\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
 
@@ -53,6 +54,8 @@ app.use('/', require('./routes/cards'));
 app.use('*', (req, res) => {
   res.status(404).send({ message: 'Страница не найдена' });
 });
+
+app.use(errors()); // обработчик ошибок celebrate
 
 app.use((err, req, res, next) => {
   if (!err.statusCode) {
