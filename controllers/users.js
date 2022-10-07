@@ -38,11 +38,7 @@ module.exports.getMe = (req, res, next) => {
       return res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new ValidationError('Переданы некорректные данные'));
-      } else {
-        next(err);
-      }
+      next(err);
     });
 };
 
@@ -50,10 +46,6 @@ module.exports.createUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-
-  if (!email || !password) {
-    return next(ValidationError('Отсутствует email или пароль'));
-  }
 
   return bcrypt.hash(password, 10)
     .then((hash) => User.create({
@@ -83,7 +75,7 @@ module.exports.updateProfile = (req, res, next) => {
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new NotFoundError('Переданы некорретные данные'));
+        next(new ValidationError('Переданы некорретные данные'));
       } else {
         next(err);
       }
@@ -98,7 +90,7 @@ module.exports.updateAvatar = (req, res, next) => {
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new NotFoundError('Переданы некорретные данные'));
+        next(new ValidationError('Переданы некорретные данные'));
       } else {
         next(err);
       }
